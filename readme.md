@@ -35,9 +35,12 @@ cd gitea-to-github-migrator
 # Compilation
 cargo build --release
 
+# Assurez-vous que l'exécutable de base a les bonnes permissions
+sudo chmod +x target/release/gitea-to-github-migrator
+
 # Installation globale (nécessite les droits sudo)
 sudo ln -s "$(pwd)/target/release/gitea-to-github-migrator" /usr/local/bin/g2gh
-sudo chmod +x /usr/local/bin/g2gh
+sudo chmod 755 /usr/local/bin/g2gh
 ```
 
 - #### Windows (cmd.exe)
