@@ -62,9 +62,6 @@ echo Installation terminee ! Redemarrez votre terminal pour utiliser la commande
 
 3. verifiez l'installation
 ```bash
-# Compilation
-cargo build --release
-
 # commande help, pour avoir de l'aide
 g2gh --help
 # Ou
