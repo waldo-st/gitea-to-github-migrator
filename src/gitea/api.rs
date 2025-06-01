@@ -81,8 +81,10 @@ async fn request_new_token(
     let client = Client::new();
     let url = format!("https://{}/git/api/v1/users/{}/tokens", base_url, username);
 
+    let name_token = format!("token_{}", chrono::Utc::now().timestamp());
+    
     let payload = serde_json::json!({
-        "name": "test_token",
+        "name": name_token,
         "scopes": [
             "read:activitypub",
             "read:issue",

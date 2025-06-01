@@ -20,9 +20,15 @@ pub fn get_token_file_path() -> PathBuf {
 
 pub fn read_user_input(prompt: &str, is_password: bool) -> Result<String, GiteaError> {
     if is_password {
+        let confirmation_text = if prompt.to_lowercase().contains("token") {
+            "Confirm token"
+        } else {
+            "Confirm password"
+        };
+
         Ok(Password::new()
             .with_prompt(prompt)
-            .with_confirmation("Confirm password", "Passwords do not match")
+            .with_confirmation(confirmation_text, "Passwords do not match")
             .interact()
             .map_err(|e| GiteaError::DialoguerError(e.to_string()))?)
     } else {
