@@ -8,8 +8,13 @@ use dialoguer::Password;
 pub fn get_token_file_path() -> PathBuf {
     let mut dir = dirs::home_dir().expect("Impossible de localiser le répertoire home");
     dir.push(".gitea");
+
     fs::create_dir_all(&dir).expect("Erreur lors de la création du dossier .gitea");
     dir.push("token.txt");
+
+    if !dir.exists() {
+        fs::write(&dir, "").expect("Impossible de créer le fichier token.txt.")
+    }
     dir
 }
 
