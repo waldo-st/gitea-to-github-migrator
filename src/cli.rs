@@ -116,7 +116,7 @@ pub async fn run(matches: ArgMatches) -> Result<(), GiteaError> {
         pb.finish_with_message("✅ Success Migration");
         tokio::fs::remove_dir_all(&temp_dir).await?;
     } else if let Some(repo_name) = matches.get_one::<String>("single-repo") {
-        let pb = add_progress(&m, 4, &format!("Migration de `{}`", repo_name));
+        let pb = add_progress(&m, 1, &format!("Migration de `{}`", repo_name));
 
         let repo = gitea_client.fetch_repo(repo_name).await?;
 
