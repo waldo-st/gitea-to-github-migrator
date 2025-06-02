@@ -2,7 +2,7 @@ use std::env;
 
 use crate::{
     errors::GiteaError,
-    git::mirror::mirror_repository,
+    git::mirror::{MirrorResult, mirror_repository},
     gitea::api::{GiteaClient, get_or_create_token_gitea},
     github::api::GithubClient,
     progress::multi_progress::{add_progress, setup_progress},
@@ -100,8 +100,11 @@ pub async fn run(matches: ArgMatches) -> Result<(), GiteaError> {
             &format!("Migrations de `{}` repositories...", repos.len()),
         );
 
+        let mut migrated_count = 0;
+        let mut skipped_count = 0;
+
         for repo in repos {
-            mirror_repository(
+            let result = mirror_repository(
                 &github_client,
                 &gitea_client,
                 &repo.clone_url,
@@ -110,17 +113,29 @@ pub async fn run(matches: ArgMatches) -> Result<(), GiteaError> {
                 &temp_dir,
             )
             .await?;
+
+            match result {
+                MirrorResult::Success => {
+                    migrated_count += 1;
+                }
+                MirrorResult::AlreadyExists => {
+                    skipped_count += 1;
+                }
+            }
             pb.inc(1);
         }
 
-        pb.finish_with_message("✅ Success Migration");
+        pb.finish_with_message(format!(
+            "✅ Migration terminée: {} migrés, {} déjà existants",
+            migrated_count, skipped_count
+        ));
         tokio::fs::remove_dir_all(&temp_dir).await?;
     } else if let Some(repo_name) = matches.get_one::<String>("single-repo") {
         let pb = add_progress(&m, 1, &format!("Migration de `{}`", repo_name));
 
         let repo = gitea_client.fetch_repo(repo_name).await?;
 
-        mirror_repository(
+        let result = mirror_repository(
             &github_client,
             &gitea_client,
             &repo.clone_url,
@@ -131,7 +146,18 @@ pub async fn run(matches: ArgMatches) -> Result<(), GiteaError> {
         .await?;
 
         pb.inc(1);
-        pb.finish_with_message(format!("✅ Success Migration: {}", repo.name));
+
+        match result {
+            MirrorResult::Success => {
+                pb.finish_with_message(format!("✅ Succès de la migration: {}", repo.name));
+            }
+            MirrorResult::AlreadyExists => {
+                pb.finish_with_message(format!(
+                    "ℹ️ Le dépôt '{}' existe déjà sur GitHub",
+                    repo.name
+                ));
+            }
+        }
 
         tokio::fs::remove_dir_all(&temp_dir).await?;
     } else {

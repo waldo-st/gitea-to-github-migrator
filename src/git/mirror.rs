@@ -1,8 +1,16 @@
 use anyhow::Result;
+use colored::*;
 use std::path::PathBuf;
 use tokio::process::Command;
 
 use crate::{errors::GiteaError, gitea::api::GiteaClient, github::api::GithubClient};
+
+// Enum to represent mirror operation result
+#[derive(Debug)]
+pub enum MirrorResult {
+    Success,
+    AlreadyExists,
+}
 
 // Clone un dépôt Gitea et le pousse vers GitHub
 pub async fn mirror_repository(
@@ -12,10 +20,23 @@ pub async fn mirror_repository(
     repo_name: &str,
     is_private: bool,
     temp_dir: &PathBuf,
-) -> Result<(), GiteaError> {
-    if !github.repo_exists(repo_name).await? {
-        github.create_repo(repo_name, is_private).await?;
+) -> Result<MirrorResult, GiteaError> {
+    // Check if repository exists on GitHub
+    if github.repo_exists(repo_name).await? {
+        println!(
+            "{} {}",
+            "ℹ️ ".blue(),
+            format!(
+                "Repository '{}' already exists on GitHub. Skipping...",
+                repo_name
+            )
+            .blue()
+        );
+        return Ok(MirrorResult::AlreadyExists);
     }
+
+    // Create the repository on GitHub
+    github.create_repo(repo_name, is_private).await?;
 
     // Dossier temporaire : temp_dir/repo_name
     let repo_temp_path = temp_dir.join(repo_name);
@@ -68,5 +89,5 @@ pub async fn mirror_repository(
     // Nettoie le dossier temporaire
     tokio::fs::remove_dir_all(repo_temp_path).await?;
 
-    Ok(())
+    Ok(MirrorResult::Success)
 }
